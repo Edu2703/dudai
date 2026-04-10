@@ -136,6 +136,14 @@
 
   let registroAtual = null;
 
+  // Auto-fill session from URL
+  const _urlParams = new URLSearchParams(window.location.search);
+  const _urlSession = _urlParams.get('session_id');
+  if (_urlSession) {
+    document.getElementById('inputSessionId').value = _urlSession;
+    buscarConversa();
+  }
+
   document.getElementById('inputSessionId').addEventListener('keydown', e => {
     if (e.key === 'Enter') buscarConversa();
   });
