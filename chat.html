@@ -292,7 +292,7 @@ async function init() {
   }, { onConflict: 'session_id' });
 
   // Carregar mensagens anteriores
-  const { data } = await supabase
+  const { data } = await srpDb
     .from('chat_mensagens')
     .select('*')
     .eq('session_id', sessionId)
