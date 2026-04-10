@@ -251,8 +251,8 @@ const SUPABASE_URL = 'https://knpnnmytfmxjdymmziza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucG5ubXl0Zm14amR5bW16aXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE2MTAsImV4cCI6MjA4NzUwNzYxMH0.vLx9C8y3lWRpabnCz_iAfdltYLylErtTvluF0nSDbBc';
 const N8N_WEBHOOK = 'https://cadastrodeprodutos-n8n.zbucu2.easypanel.host/webhook/f03f9fdc-f9a1-4d99-b8c9-89d25776a485';
 
-let supabase;
-try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn(e); }
+let srpDb;
+try { srpDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn(e); }
 
 // Gerar ou recuperar session_id
 function getSessionId() {
@@ -285,7 +285,7 @@ bar.addEventListener('click', () => {
 async function init() {
   initialized = true;
   // Criar sessão no Supabase
-  await supabase.from('chat_sessoes').upsert({
+  await srpDb.from('chat_sessoes').upsert({
     session_id: sessionId,
     atendimento_humano: false,
     status: 'ativo'
@@ -305,7 +305,7 @@ async function init() {
   }
 
   // Escutar novas mensagens em tempo real
-  supabase.channel('chat_' + sessionId)
+  srpDb.channel('chat_' + sessionId)
     .on('postgres_changes', {
       event: 'INSERT',
       schema: 'public',
@@ -350,7 +350,7 @@ async function sendMessage() {
   input.style.height = 'auto';
 
   // Salvar no Supabase
-  await supabase.from('chat_mensagens').insert({
+  await srpDb.from('chat_mensagens').insert({
     session_id: sessionId,
     autor: 'cliente',
     mensagem: text
