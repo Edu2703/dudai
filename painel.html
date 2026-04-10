@@ -305,11 +305,12 @@ body { font-family: 'DM Sans', sans-serif; background: var(--dark); color: var(-
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
+const { createClient } = window.supabase;
 const SUPABASE_URL = 'https://knpnnmytfmxjdymmziza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucG5ubXl0Zm14amR5bW16aXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE2MTAsImV4cCI6MjA4NzUwNzYxMH0.vLx9C8y3lWRpabnCz_iAfdltYLylErtTvluF0nSDbBc';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let currentSession = null;
 let currentSupervisor = null;
