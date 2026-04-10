@@ -307,10 +307,10 @@ body { font-family: 'DM Sans', sans-serif; background: var(--dark); color: var(-
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const { createClient } = window.supabase;
+let srpDb2;
 const SUPABASE_URL = 'https://knpnnmytfmxjdymmziza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucG5ubXl0Zm14amR5bW16aXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE2MTAsImV4cCI6MjA4NzUwNzYxMH0.vLx9C8y3lWRpabnCz_iAfdltYLylErtTvluF0nSDbBc';
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+try { srpDb2 = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn(e); }
 
 let currentSession = null;
 let currentSupervisor = null;
@@ -324,7 +324,7 @@ async function doLogin() {
   const erro = document.getElementById('login-error');
   erro.style.display = 'none';
 
-  const { data, error } = await supabase
+  const { data, error } = await srpDb2
     .from('chat_supervisores')
     .select('*')
     .eq('usuario', usuario)
@@ -359,7 +359,7 @@ async function initApp() {
   await loadConversas();
 
   // Realtime: novas sessões
-  sessChannel = supabase.channel('sessoes_all')
+  sessChannel = srpDb2.channel('sessoes_all')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_sessoes' }, () => {
       loadConversas();
     })
@@ -367,7 +367,7 @@ async function initApp() {
 }
 
 async function loadConversas() {
-  const { data } = await supabase
+  const { data } = await srpDb2
     .from('chat_sessoes')
     .select('*')
     .order('updated_at', { ascending: false });
@@ -385,7 +385,7 @@ async function loadConversas() {
   list.innerHTML = '';
 
   for (const s of data) {
-    const { data: msgs } = await supabase
+    const { data: msgs } = await srpDb2
       .from('chat_mensagens')
       .select('mensagem, autor')
       .eq('session_id', s.session_id)
@@ -424,7 +424,7 @@ async function openConv(sessionId, isHumano) {
   // Carregar mensagens
   const msgs = document.getElementById('chat-messages');
   msgs.innerHTML = '';
-  const { data } = await supabase
+  const { data } = await srpDb2
     .from('chat_mensagens')
     .select('*')
     .eq('session_id', sessionId)
@@ -434,8 +434,8 @@ async function openConv(sessionId, isHumano) {
   msgs.scrollTop = msgs.scrollHeight;
 
   // Realtime mensagens
-  if (msgChannel) supabase.removeChannel(msgChannel);
-  msgChannel = supabase.channel('msgs_' + sessionId)
+  if (msgChannel) srpDb2.removeChannel(msgChannel);
+  msgChannel = srpDb2.channel('msgs_' + sessionId)
     .on('postgres_changes', {
       event: 'INSERT', schema: 'public',
       table: 'chat_mensagens',
@@ -486,7 +486,7 @@ function updateHumanMode(isHumano) {
 // Assumir conversa
 document.getElementById('btn-assumir').addEventListener('click', async () => {
   if (!currentSession) return;
-  await supabase.from('chat_sessoes')
+  await srpDb2.from('chat_sessoes')
     .update({ atendimento_humano: true, supervisor_id: currentSupervisor.usuario, updated_at: new Date().toISOString() })
     .eq('session_id', currentSession);
   updateHumanMode(true);
@@ -496,7 +496,7 @@ document.getElementById('btn-assumir').addEventListener('click', async () => {
 // Devolver à DudAI
 document.getElementById('btn-devolver').addEventListener('click', async () => {
   if (!currentSession) return;
-  await supabase.from('chat_sessoes')
+  await srpDb2.from('chat_sessoes')
     .update({ atendimento_humano: false, supervisor_id: null, updated_at: new Date().toISOString() })
     .eq('session_id', currentSession);
   updateHumanMode(false);
@@ -511,7 +511,7 @@ async function sendSupMsg() {
   input.value = '';
   input.style.height = 'auto';
 
-  await supabase.from('chat_mensagens').insert({
+  await srpDb2.from('chat_mensagens').insert({
     session_id: currentSession,
     autor: 'supervisor',
     mensagem: text
