@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Surpresinhas</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  #srp-chat-wrapper {
+    position: fixed;
+    bottom: 0;
+    right: 24px;
+    z-index: 99999;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  /* BARRA FLUTUANTE */
+  #srp-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0 20px;
+    height: 48px;
+    border-radius: 12px 12px 0 0;
+    cursor: pointer;
+    box-shadow: 0 -2px 20px rgba(0,0,0,0.25);
+    transition: background 0.2s;
+    min-width: 220px;
+    user-select: none;
+  }
+  #srp-bar:hover { background: #e91e8c; }
+
+  #srp-bar-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #4ade80;
+    flex-shrink: 0;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  #srp-bar-icon {
+    width: 20px; height: 20px; flex-shrink: 0;
+    fill: none; stroke: #fff; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  #srp-bar-text { font-size: 14px; font-weight: 500; flex: 1; }
+  #srp-bar-chevron { font-size: 12px; opacity: 0.6; transition: transform 0.3s; }
+  #srp-chat-wrapper.open #srp-bar-chevron { transform: rotate(180deg); }
+
+  /* JANELA DO CHAT */
+  #srp-window {
+    width: 340px;
+    height: 0;
+    overflow: hidden;
+    background: #fff;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -4px 30px rgba(0,0,0,0.15);
+    display: flex;
+    flex-direction: column;
+    transition: height 0.35s cubic-bezier(0.4,0,0.2,1);
+  }
+  #srp-chat-wrapper.open #srp-window { height: 460px; }
+
+  /* HEADER */
+  #srp-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #e91e8c 100%);
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  #srp-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+  #srp-header-info { flex: 1; }
+  #srp-header-name { color: #fff; font-weight: 600; font-size: 14px; }
+  #srp-header-status { color: rgba(255,255,255,0.7); font-size: 12px; margin-top: 1px; }
+
+  /* MENSAGENS */
+  #srp-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: #f8f8fc;
+  }
+  #srp-messages::-webkit-scrollbar { width: 4px; }
+  #srp-messages::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+  .srp-msg {
+    max-width: 80%;
+    padding: 10px 13px;
+    border-radius: 14px;
+    font-size: 13px;
+    line-height: 1.5;
+    word-break: break-word;
+    animation: fadeIn 0.2s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .srp-msg.bot, .srp-msg.supervisor {
+    background: #fff;
+    color: #1a1a2e;
+    align-self: flex-start;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .srp-msg.cliente {
+    background: #e91e8c;
+    color: #fff;
+    align-self: flex-end;
+    border-bottom-right-radius: 4px;
+  }
+  .srp-msg.supervisor { border-left: 3px solid #e91e8c; }
+
+  .srp-msg-time {
+    font-size: 10px;
+    opacity: 0.5;
+    margin-top: 4px;
+    text-align: right;
+  }
+  .srp-msg.bot .srp-msg-time, .srp-msg.supervisor .srp-msg-time { text-align: left; }
+
+  .srp-typing {
+    display: flex; gap: 4px; align-items: center;
+    padding: 10px 13px;
+    background: #fff;
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    align-self: flex-start;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .srp-typing span {
+    width: 6px; height: 6px;
+    background: #ccc; border-radius: 50%;
+    animation: typing 1.2s infinite;
+  }
+  .srp-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .srp-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes typing { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-5px); } }
+
+  /* INPUT */
+  #srp-input-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-top: 1px solid #eee;
+    background: #fff;
+    flex-shrink: 0;
+  }
+  #srp-input {
+    flex: 1;
+    border: 1px solid #e5e5e5;
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    color: #1a1a2e;
+    transition: border-color 0.2s;
+    resize: none;
+    max-height: 80px;
+    min-height: 36px;
+    line-height: 1.4;
+  }
+  #srp-input:focus { border-color: #e91e8c; }
+  #srp-send {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #e91e8c;
+    border: none;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.2s, transform 0.1s;
+  }
+  #srp-send:hover { background: #c41677; }
+  #srp-send:active { transform: scale(0.95); }
+  #srp-send svg { width: 16px; height: 16px; fill: #fff; }
+
+  #srp-powered {
+    text-align: center;
+    font-size: 10px;
+    color: #bbb;
+    padding: 4px 0 6px;
+    background: #fff;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 400px) {
+    #srp-chat-wrapper { right: 0; }
+    #srp-window { width: 100vw; border-radius: 12px 12px 0 0; }
+    #srp-bar { border-radius: 0; min-width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<div id="srp-chat-wrapper">
+  <div id="srp-window">
+    <div id="srp-header">
+      <div id="srp-avatar">💝</div>
+      <div id="srp-header-info">
+        <div id="srp-header-name">DudAI · Surpresinhas</div>
+        <div id="srp-header-status">● Online agora</div>
+      </div>
+    </div>
+    <div id="srp-messages"></div>
+    <div id="srp-input-area">
+      <textarea id="srp-input" placeholder="Digite sua mensagem..." rows="1"></textarea>
+      <button id="srp-send">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+    <div id="srp-powered">Atendimento Surpresinhas 💝</div>
+  </div>
+
+  <div id="srp-bar">
+    <div id="srp-bar-dot"></div>
+    <svg id="srp-bar-icon" viewBox="0 0 24 24">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+    </svg>
+    <span id="srp-bar-text">Fale com a DudAI</span>
+    <span id="srp-bar-chevron">▲</span>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = 'https://knpnnmytfmxjdymmziza.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucG5ubXl0Zm14amR5bW16aXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE2MTAsImV4cCI6MjA4NzUwNzYxMH0.vLx9C8y3lWRpabnCz_iAfdltYLylErtTvluF0nSDbBc';
+const N8N_WEBHOOK = 'COLE_AQUI_O_WEBHOOK_DO_N8N';
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Gerar ou recuperar session_id
+function getSessionId() {
+  let sid = localStorage.getItem('srp_session_id');
+  if (!sid) {
+    sid = crypto.randomUUID();
+    localStorage.setItem('srp_session_id', sid);
+  }
+  return sid;
+}
+
+const sessionId = getSessionId();
+const wrapper = document.getElementById('srp-chat-wrapper');
+const bar = document.getElementById('srp-bar');
+const messages = document.getElementById('srp-messages');
+const input = document.getElementById('srp-input');
+const sendBtn = document.getElementById('srp-send');
+let typingEl = null;
+let isOpen = false;
+let initialized = false;
+
+// Abrir/fechar chat
+bar.addEventListener('click', () => {
+  isOpen = !isOpen;
+  wrapper.classList.toggle('open', isOpen);
+  if (isOpen && !initialized) init();
+  if (isOpen) setTimeout(() => input.focus(), 400);
+});
+
+async function init() {
+  initialized = true;
+  // Criar sessão no Supabase
+  await supabase.from('chat_sessoes').upsert({
+    session_id: sessionId,
+    atendimento_humano: false,
+    status: 'ativo'
+  }, { onConflict: 'session_id' });
+
+  // Carregar mensagens anteriores
+  const { data } = await supabase
+    .from('chat_mensagens')
+    .select('*')
+    .eq('session_id', sessionId)
+    .order('created_at', { ascending: true });
+
+  if (data && data.length > 0) {
+    data.forEach(m => addMessage(m.autor, m.mensagem, m.created_at));
+  } else {
+    addMessage('bot', 'Olá! 👋 Seja bem-vinda à Surpresinhas — eu sou a DudAI, sua consultora de bem-estar íntimo. Como posso te ajudar hoje?');
+  }
+
+  // Escutar novas mensagens em tempo real
+  supabase.channel('chat_' + sessionId)
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'chat_mensagens',
+      filter: `session_id=eq.${sessionId}`
+    }, payload => {
+      const m = payload.new;
+      if (m.autor !== 'cliente') {
+        removeTyping();
+        addMessage(m.autor, m.mensagem, m.created_at);
+      }
+    })
+    .subscribe();
+}
+
+function addMessage(autor, texto, time) {
+  const div = document.createElement('div');
+  div.className = `srp-msg ${autor}`;
+  const hora = time ? new Date(time).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  div.innerHTML = `<div>${texto}</div><div class="srp-msg-time">${hora}</div>`;
+  messages.appendChild(div);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping() {
+  if (typingEl) return;
+  typingEl = document.createElement('div');
+  typingEl.className = 'srp-typing';
+  typingEl.innerHTML = '<span></span><span></span><span></span>';
+  messages.appendChild(typingEl);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function removeTyping() {
+  if (typingEl) { typingEl.remove(); typingEl = null; }
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Salvar no Supabase
+  await supabase.from('chat_mensagens').insert({
+    session_id: sessionId,
+    autor: 'cliente',
+    mensagem: text
+  });
+
+  addMessage('cliente', text);
+  showTyping();
+
+  // Chamar N8N
+  try {
+    await fetch(N8N_WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sessionId, mensagem: text, action: 'sendMessage' })
+    });
+  } catch(e) {
+    removeTyping();
+    addMessage('bot', 'Tivemos uma instabilidade. Tente novamente em instantes! 💙');
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+input.addEventListener('input', () => {
+  input.style.height = 'auto';
+  input.style.height = Math.min(input.scrollHeight, 80) + 'px';
+});
+</script>
+</body>
+</html>
