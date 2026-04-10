@@ -245,12 +245,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const { createClient } = window.supabase;
 const SUPABASE_URL = 'https://knpnnmytfmxjdymmziza.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtucG5ubXl0Zm14amR5bW16aXphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MzE2MTAsImV4cCI6MjA4NzUwNzYxMH0.vLx9C8y3lWRpabnCz_iAfdltYLylErtTvluF0nSDbBc';
-const N8N_WEBHOOK = 'COLE_AQUI_O_WEBHOOK_DO_N8N';
+const N8N_WEBHOOK = 'https://cadastrodeprodutos-n8n.zbucu2.easypanel.host/webhook/f03f9fdc-f9a1-4d99-b8c9-89d25776a485';
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+let supabase;
+try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); } catch(e) { console.warn(e); }
 
 // Gerar ou recuperar session_id
 function getSessionId() {
